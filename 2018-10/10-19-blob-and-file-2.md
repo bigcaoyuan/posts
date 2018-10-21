@@ -20,17 +20,15 @@
 </svg>
 ```
 
-把这段 svg 代码粘到 demo的框里，然后点一下「Download PNG」按钮，就会得到一张 png 图片。
+把这段 svg 代码粘到 demo 的框里，然后点一下「Download PNG」按钮，就会得到一张 png 图片。
 
 ## 实现
 实现有两个比较关键的点，一个是我们如何把 svg 转成图片，另一个是如何把图片下载下来。针对第二个问题，想要下载图片，就要拿到图片的地址，上一篇文章提到可以使用 URL 为 blob 对象生成地址链接，有了链接就好办了。针对第一个问题，我们要稍微做下转换，先用 svg 创建一个 blob 对象，通过这个 blob 对象创建一个 img 元素，把这个 img 绘制到 canvas 上，然后通过 canvas 再创建一个 blob 对象（png 类型），这个 blob 对象就是最终要被下载的 png 图片。
 
 ### 主要步骤
 梳理了下，整个过程是：
-
 ```
 svg->blob->img->canvas->blob->下载
-
 ```
 
 分解一下每个步骤的关键点：
@@ -38,33 +36,34 @@ svg->blob->img->canvas->blob->下载
 上一篇文章我们介绍到，blob 的构造函数支持 DOMString，所以我们是可以直接基于 svg 代码串构建 blob 对象的。
 
 2. blob -> img
-上一篇文章我们介绍到，可以使用`URL.createObjectURL()`生成链接，作为`img`元素的`src`。我们可以用这个`src` new 一个 Image 对象。
+上一篇文章我们介绍到，可以使用 `URL.createObjectURL()` 生成链接，作为 `img` 元素的 `src`。我们可以用这个 `src` 创建一个 `Image` 对象。
 
 3. img -> canvas
-这个大家都知道的，可以使用 canvas 的`drawImage()`方法把`img`元素绘制到 canvas 上。
+这个大家都知道的，可以使用 canvas 的 `drawImage()` 方法把 `img` 元素绘制到 canvas 上。
 
 4. canvas -> blob
-canvas 还有一个方法叫`toBlob()`，可以为画布上的图像创建一个 blob 对象，默认类型为`image/png`。
+canvas 还有一个方法叫 `toBlob()`，可以为画布上的图像创建一个 blob 对象，默认类型为 `image/png`。
 
 5. blob->png
-再次使用`URL.createObjectURL()`方法为刚刚画布创建的 blob 生成链接，然后下载。
+再次使用 `URL.createObjectURL()` 方法为刚刚画布创建的 blob 生成链接，然后下载。
 
-再提一下下载，我们知道`<a>`标签可以链接到一个图片，
+再提一下下载，我们知道 `<a>` 标签可以链接到一个图片，
 ```html
 <a href="https://example.com/demo.png">
 ```
+
 但浏览器并不会下载这张图片，而是会在页面内打开图片预览。想要浏览器以附件形式下载，有两种方案：
-1. 图片服务器设置响应头`Content-Disposition: attachment;`；
-2. 为`<a>`标签加上 [download属性]。
+1. 图片服务器设置响应头 Content-Disposition: attachment;；
+2. 为 `<a>` 标签加上 download 属性。
+
 第一种涉及到服务端操作，有些麻烦，我们使用第二种方案就好。
 
-
-下面来看一下具体的代码。
+以上就是整个转换的过程，下面来看一下具体的代码。
 
 ## 代码
 
 ### 核心代码
-在看转换过程的核心代码之前，先介绍一下转换过程中用到的两个工具函数，第一个是`drawCanvas`，作用是把 img 绘制到 canvas 上，接收一个 img 元素，返回绘制好的 canvas 对象；第二个是`downloadBlob`，作用是下载 blob 对象，接收一个 blob 对象，把它下载下来，没有返回值。
+在看转换过程的核心代码之前，先介绍一下转换过程中用到的两个工具函数，第一个是 `drawCanvas`，作用是把 img 绘制到 canvas 上，接收一个 img 元素，返回绘制好的 canvas 对象；第二个是 `downloadBlob`，作用是下载 blob 对象，接收一个 blob 对象，把它下载下来，没有返回值。
 
 后面会详细介绍这两个函数。先看一下转换过程：
 
@@ -87,7 +86,7 @@ canvas 还有一个方法叫`toBlob()`，可以为画布上的图像创建一个
 ```
 
 在关键步骤都写了注释，感觉整体的逻辑还是比较清晰的。
-最后的`canvas.toBlob(downloadBlob)`可以了解一下，`canvas.toBlob()`方法的第一个参数是个回调函数，回调函数的参数是创建好的 blob 对象，这行代码相当于：
+最后的 `canvas.toBlob(downloadBlob)` 可以了解一下，`canvas.toBlob()` 方法的第一个参数是个回调函数，回调函数的参数是创建好的 blob 对象，这行代码相当于：
 
 ```js
 canvas.toBlob(blob => {
@@ -95,7 +94,7 @@ canvas.toBlob(blob => {
 })
 ```
 
-toBlob 的第二个参数是 blob 的 MIME 类型，默认就是`image/png`，所以不需要传；第三个参数是图片质量，我们写demo也不需要考虑什么质量/压缩，也不传了。
+`toBlob` 的第二个参数是 blob 的 MIME 类型，默认就是 `image/png` ，所以不需要传；第三个参数是图片质量，我们写demo也不需要考虑什么质量/压缩，也不传了。
 
 ### 工具函数
 最后看一下两个工具函数。
@@ -112,7 +111,7 @@ function drawCanvas(img){
 }
 ```
 
-主要就是创建 canvas 然后用`ctx.drawImage(img, 0, 0);`把 img 元素绘制上去。
+主要就是创建 canvas 然后用 `ctx.drawImage(img, 0, 0);` 把 img 元素绘制上去。
 
 #### downloadBlob
 ```js
@@ -127,7 +126,7 @@ function downloadBlob(blob){
 主要是使用`URL.createObjectURL(blob)`生成链接，用 download 属性让浏览器以附件形式下载图片、定义下载文件名，创建`a`标签并模拟点击。
 
 ## 总结
-其实我感觉我这边拆开说有点不连贯，还不如直接在去[codepen demo]看完整的代码，实现还是比较简单清晰的，再查一查不熟的 api，就都好理解了。
+其实我感觉我这边拆开说有点不连贯，还不如直接在去 [codepen demo] 看完整的代码，实现还是比较简单清晰的，再查一查不熟的 api，就都好理解了。
 
 ## 参考
 MDN：[`<a>`标签]、canvas 的 [drawImage()方法]、[toBlob()方法]、[响应头 Content-Disposition]
